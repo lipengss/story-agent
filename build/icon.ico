@@ -1,0 +1,13 @@
+file:///C:/Users/lipen/AppData/Local/npm-cache/_npx/94e6c7d88b079398/node_modules/png-to-ico/index.js:6
+const err = new Error("Please give me a square PNG image.");
+            ^
+
+Error: Please give me a square PNG image.
+    at file:///C:/Users/lipen/AppData/Local/npm-cache/_npx/94e6c7d88b079398/node_modules/png-to-ico/index.js:6:13
+    at ModuleJob.run (node:internal/modules/esm/module_job:377:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:691:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  code: 'ESIZE'
+}
+
+Node.js v24.11.0

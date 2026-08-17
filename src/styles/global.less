@@ -1,0 +1,243 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #app {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  font-family: 'Noto Serif SC', 'PingFang SC', 'Microsoft YaHei', serif;
+  font-size: 14px;
+  color: #374151;
+  background: #f8f9fb;
+}
+
+// Code font
+code, pre, .mono, .var-name {
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+}
+
+// Scrollbar
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+// Focus visible
+:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+// Vue Flow overrides
+.vue-flow__node {
+  cursor: pointer;
+  transition: filter 0.2s;
+
+  &:hover {
+    filter: brightness(0.97);
+  }
+}
+
+.vue-flow__node.selected > div {
+  box-shadow: 0 0 0 2px #6366f1, 0 4px 16px rgba(99, 102, 241, 0.2) !important;
+}
+
+.vue-flow__edge-path {
+  stroke: #c4b5fd;
+  stroke-width: 2;
+  transition: stroke 0.2s;
+}
+
+.vue-flow__edge:hover .vue-flow__edge-path {
+  stroke: #8b5cf6;
+  stroke-width: 3;
+}
+
+.vue-flow__edge.selected .vue-flow__edge-path {
+  stroke: #6366f1;
+  stroke-width: 3;
+}
+
+.vue-flow__connection-line {
+  stroke: #6366f1;
+  stroke-width: 2;
+  stroke-dasharray: 6 3;
+}
+
+.vue-flow__handle {
+  width: 10px;
+  height: 10px;
+  border: 2px solid transparent;
+  background: transparent;
+  border-radius: 50%;
+  transition: all 0.2s;
+  opacity: 0;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -10px;
+    border-radius: 50%;
+  }
+}
+
+// Show handles on node hover or when connecting
+.vue-flow__node:hover .vue-flow__handle,
+.vue-flow__handle:hover,
+.vue-flow__handle-connecting {
+  opacity: 1;
+  width: 14px;
+  height: 14px;
+  border-color: #a5b4fc;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(165, 180, 252, 0.15);
+}
+
+.vue-flow__handle:hover {
+  width: 18px;
+  height: 18px;
+  border-color: #6366f1;
+  background: #eef2ff;
+  box-shadow: 0 0 0 8px rgba(99, 102, 241, 0.12);
+}
+
+.vue-flow__handle-connecting {
+  opacity: 1 !important;
+  background: #6366f1;
+  border-color: #6366f1;
+}
+
+// Show all handles when dragging a connection
+:deep(.vue-flow__connection-line) ~ .vue-flow__handle,
+.vue-flow__handle-connecting {
+  opacity: 1;
+  border-color: #a5b4fc;
+  background: #fff;
+}
+
+.vue-flow__handle-valid {
+  background: #22c55e;
+  border-color: #22c55e;
+}
+
+.vue-flow__background {
+  background-color: #fafbfc;
+}
+
+// Resize handle
+.resize-handle {
+  position: absolute;
+  z-index: 100;
+
+  &--horizontal {
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    cursor: col-resize;
+
+    &:hover {
+      background: #6366f1;
+    }
+  }
+
+  &--vertical {
+    left: 0;
+    right: 0;
+    height: 8px;
+    cursor: row-resize;
+
+    &:hover {
+      background: #6366f1;
+    }
+  }
+}
+
+// Selection
+::selection {
+  background: #c7d2fe;
+  color: #3730a3;
+}
+
+// Shared canvas node base styles
+.node-base {
+  background: #fff;
+  border-radius: 10px;
+  min-width: 160px;
+  max-width: 220px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 2px solid transparent;
+
+  .node-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 8px 8px 0 0;
+  }
+  .node-icon { font-size: 14px; }
+  .node-title {
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .node-body { padding: 8px 12px; }
+  .node-content, .node-summary, .node-desc, .node-prompt {
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.5;
+    white-space: normal;
+    word-break: break-word;
+  }
+}
+
+.node-compact {
+  min-width: 140px;
+  max-width: 200px;
+}
+
+// ==============================
+// Tour 新手引导面板强制可见修复
+// ant-design-vue 的 PopupInner 使用 opacity:0 的状态机
+// 在 Electron 环境下 Align 组件可能无法及时完成对齐回调
+// 导致面板始终保持透明。此处强制覆盖。
+// ==============================
+.ant-tour,
+.ant-tour-content,
+.ant-tour-inner {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+.rc-trigger-popup,
+[class*="rc-trigger-popup"] {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+// 确保 tour 面板在遮罩层之上
+.ant-tour-mask {
+  + .rc-trigger-popup,
+  ~ [class*="rc-trigger-popup"] {
+    z-index: 1010 !important;
+  }
+}
