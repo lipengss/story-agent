@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Skill, SkillCategory } from '@/types'
 import { loadSkills, saveSkills, generateId } from '@/utils/storage'
+import { ZHIHU_SYSTEM_PROMPT } from '@/utils/titleDesign'
 
 export const useSkillStore = defineStore('skills', () => {
   const skills = ref<Skill[]>(loadSkills())
@@ -45,16 +46,25 @@ export const useSkillStore = defineStore('skills', () => {
       id: 'ds-style-zhihu-hit',
       name: '知乎爆款体',
       category: 'style',
-      description: '高赞回答风格——反常识开头+干货+金句收尾',
+      description: '高赞回答风格——具体切入 + 干货 + 自然收尾',
       promptFragment: `请用知乎高赞回答的写作风格：
-1. 开头用反常识观点/个人经历/惊人数字抓住注意力（3行以内）
-2. 正文分3-5个论点，每个 = 一句话结论 + 案例/数据 + 实操建议
-3. 每段不超过3行（适配手机阅读），关键观点用**加粗**标注
-4. 多用对比制造冲击（"99%的人以为……实际上……"）
-5. 结尾用一句金句升华 + 引导互动
-6. 至少融入2句适合截图转发的句子
+1. 开头用具体的个人经历或真实数据切入（3行以内），不刻意反常识
+2. 正文分3-5个论点，每个 = 结论 + 案例/数据 + 实操建议
+3. 每段不超过3行（适配手机阅读），关键处可加粗但不要句句加粗
+4. 用具体的人和事说话，避免"99%的人以为……实际上……"这类对比套路
+5. 结尾自然收束，点到为止，不强行升华、不造金句
+6. 语气像真人答主，避免「AI 味」：不堆排比、不喊口号
 主题：{{context}}`,
       variables: [{ name: 'context', label: '写作主题', defaultValue: '', required: true }],
+      createdAt: Date.now(), updatedAt: Date.now(),
+    },
+    {
+      id: 'ds-title-zhihu-hit',
+      name: '知乎爆款标题',
+      category: 'title',
+      description: '按知乎爆款公式设计标题：身份锚点 + 数字 + 反差 + 悬念',
+      promptFragment: ZHIHU_SYSTEM_PROMPT,
+      variables: [],
       createdAt: Date.now(), updatedAt: Date.now(),
     },
     {
@@ -128,7 +138,7 @@ export const useSkillStore = defineStore('skills', () => {
       id: 'ds-struct-zhihu-layer',
       name: '知乎三层框架',
       category: 'structure',
-      description: '痛点共鸣→干货输出→金句升华（20/60/20比例）',
+      description: '痛点共鸣→干货输出→自然收束（20/60/20比例）',
       promptFragment: `请严格按三层框架组织内容：
 【第一层：痛点共鸣（20%篇幅）】
 - 从具体场景或故事切入，让读者觉得"说的就是我"
@@ -137,10 +147,10 @@ export const useSkillStore = defineStore('skills', () => {
 - 分3-5个论点深入展开
 - 每个论点结构：小标题 → 一句话结论 → 案例/数据支撑 → 实操建议
 - 论点之间要有逻辑递进，层层深入
-【第三层：总结升华（20%篇幅）】
+【第三层：总结收束（20%篇幅）】
 - 提炼核心洞见（一句话让读者记住）
 - 给出可执行的行动建议
-- 金句收尾，打动人心
+- 自然收尾，点到为止，不强行升华
 主题：{{topic}}`,
       variables: [{ name: 'topic', label: '文章主题', defaultValue: '', required: true }],
       createdAt: Date.now(), updatedAt: Date.now(),
@@ -231,6 +241,24 @@ export const useSkillStore = defineStore('skills', () => {
   if (skills.value.length === 0) {
     skills.value = [...defaultSkills]
     saveSkills(skills.value)
+  } else {
+    // 迁移：为老用户补上新增的内置技能，并把内置技能的提示词同步到最新版本（去 AI 味等更新）
+    let changed = false
+    for (const def of defaultSkills) {
+      const existing = skills.value.find(s => s.id === def.id)
+      if (!existing) {
+        skills.value.push(def)
+        changed = true
+      } else if (existing.promptFragment !== def.promptFragment || existing.description !== def.description) {
+        existing.name = def.name
+        existing.category = def.category
+        existing.description = def.description
+        existing.promptFragment = def.promptFragment
+        existing.variables = def.variables ? [...def.variables] : []
+        changed = true
+      }
+    }
+    if (changed) saveSkills(skills.value)
   }
 
   const filteredSkills = computed(() => {

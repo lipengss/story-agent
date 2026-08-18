@@ -389,6 +389,7 @@ function onDrop(event: DragEvent) {
       data: {
         skillId: skill.id,
         name: skill.name,
+        category: skill.category,
         promptFragment: skill.promptFragment,
         variables: skill.variables,
       },

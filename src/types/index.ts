@@ -34,13 +34,14 @@ export interface Skill {
   updatedAt: number
 }
 
-export type SkillCategory = 'style' | 'structure' | 'character' | 'world'
+export type SkillCategory = 'style' | 'structure' | 'character' | 'world' | 'title'
 
 export const SkillCategoryLabels: Record<SkillCategory, string> = {
   style: '风格',
   structure: '结构',
   character: '角色',
   world: '世界',
+  title: '标题',
 }
 
 // ============ Graph ============

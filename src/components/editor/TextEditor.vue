@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useProjectStore } from '@/stores/project'
+import { useSkillStore } from '@/stores/skills'
 import { loadApiConfigs } from '@/utils/storage'
 import { callLLM } from '@/utils/llm'
+import { getTitleDesignSpec, ZHIHU_ANGLES } from '@/utils/titleDesign'
 import { message, notification } from 'ant-design-vue'
 import { marked } from 'marked'
 
 const projectStore = useProjectStore()
+const skillStore = useSkillStore()
 
 const editMode = ref<'edit' | 'preview'>('edit')
 const generating = ref(false)
@@ -62,14 +65,25 @@ function buildArticleContext(): string {
   }
 
   const skills = nodes.filter(n => n.type === 'skill')
-  if (skills.length) {
+  const writingSkills = skills.filter(sk => (sk.data.category || skillStore.skills.find(s => s.id === sk.data.skillId)?.category) !== 'title')
+  if (writingSkills.length) {
     parts.push('【写作风格】')
-    for (const sk of skills) {
+    for (const sk of writingSkills) {
       if (sk.data.name || sk.data.promptFragment) parts.push(`${sk.data.name || '未命名'}：${sk.data.promptFragment || ''}`)
     }
   }
 
   return parts.length ? `以下是整篇文章的创作设定，请严格遵循这些设定来处理用户的文本：\n\n${parts.join('\n\n')}` : ''
+}
+
+// 查找画布上的「标题」类技能，返回其 promptFragment（无则 null）
+function findTitleSkillPrompt(): string | null {
+  for (const n of projectStore.graph.nodes) {
+    if (n.type !== 'skill') continue
+    const category = n.data.category || skillStore.skills.find(s => s.id === n.data.skillId)?.category
+    if (category === 'title' && n.data.promptFragment) return n.data.promptFragment
+  }
+  return null
 }
 
 async function inlineAI(key: string, promptPrefix: string) {
@@ -173,11 +187,14 @@ async function openTitleDesigner() {
       ? textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim()
       : ''
 
-    const titleAngles = '1.悬念疑问式\n2.反常识式\n3.共鸣痛点式\n4.对比冲击式\n5.两难选择式\n6.温情治愈式'
+    // 画布上若有「标题」类技能，则优先用其方法论（可跨文章类型启用）
+    const titleSkillPrompt = findTitleSkillPrompt()
+    const spec = getTitleDesignSpec(projectStore.currentArticleType?.id)
+    const titleAngles = titleSkillPrompt ? ZHIHU_ANGLES : spec.angles
     const formatHint = '每个15-25字，标题之间角度要明显不同，直接输出6行标题，每行格式："1. 标题内容"，不要加任何其他文字。'
 
     let prompt: string
-    let systemPrompt = '你是专业的标题设计师，根据文章内容生成贴合内文的标题，只返回6行标题，不要加任何解释。'
+    const systemPrompt = titleSkillPrompt || spec.systemPrompt
 
     if (selectedText) {
       // Priority: selected text — generate titles focused on the selection
@@ -674,17 +691,29 @@ export default { components: { DownOutlined, CheckCircleOutlined, SyncOutlined, 
 }
 
 .editor-preview {
-  padding: 12px 16px;
+  padding: 16px 20px;
   height: 100%;
   overflow-y: auto;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.8;
-  color: #374151;
+  color: #1f2937;
+  word-break: break-word;
 
-  :deep(h1), :deep(h2), :deep(h3) { margin: 12px 0 8px; }
-  :deep(p) { margin: 6px 0; }
-  :deep(code) { background: #f3f4f6; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
-  :deep(pre) { background: #f3f4f6; padding: 12px; border-radius: 6px; overflow-x: auto; }
+  :deep(h1) { font-size: 1.6em; margin: 16px 0 10px; font-weight: 700; }
+  :deep(h2) { font-size: 1.35em; margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #eef0f3; font-weight: 700; }
+  :deep(h3) { font-size: 1.15em; margin: 14px 0 8px; font-weight: 600; }
+  :deep(h4) { font-size: 1.05em; margin: 10px 0 6px; font-weight: 600; }
+  :deep(p) { margin: 0 0 10px; }
+  :deep(ul), :deep(ol) { margin: 0 0 10px; padding-left: 24px; }
+  :deep(li) { margin: 4px 0; }
+  :deep(strong), :deep(b) { font-weight: 600; color: #111827; }
+  :deep(blockquote) { margin: 10px 0; padding: 8px 14px; border-left: 3px solid #6366f1; background: #f8f9ff; color: #4b5563; }
+  :deep(hr) { border: none; border-top: 1px solid #e5e7eb; margin: 16px 0; }
+  :deep(a) { color: #6366f1; text-decoration: none; }
+  :deep(code) { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+  :deep(pre) { background: #f6f8fa; padding: 12px 14px; border-radius: 8px; overflow-x: auto; margin: 10px 0; }
+  :deep(pre code) { background: none; padding: 0; }
+  :deep(img) { max-width: 100%; border-radius: 6px; }
 }
 
 .version-dropdown {

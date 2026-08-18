@@ -15,6 +15,7 @@ const categories: Array<{ key: SkillCategory | 'all'; label: string }> = [
   { key: 'structure', label: '结构' },
   { key: 'character', label: '角色' },
   { key: 'world', label: '世界' },
+  { key: 'title', label: '标题' },
 ]
 
 function onDragStart(event: DragEvent, skill: any) {

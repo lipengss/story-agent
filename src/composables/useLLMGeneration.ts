@@ -1,12 +1,14 @@
 import { ref } from 'vue'
 import { message, notification } from 'ant-design-vue'
 import { useProjectStore } from '@/stores/project'
+import { useSkillStore } from '@/stores/skills'
 import { loadApiConfigs } from '@/utils/storage'
 import { callLLM } from '@/utils/llm'
 import type { StoryNode, LLMConfig } from '@/types'
 
 export function useLLMGeneration() {
   const projectStore = useProjectStore()
+  const skillStore = useSkillStore()
   const running = ref(false)
   const abortController = ref<AbortController | null>(null)
   const queue = ref<string[]>([])
@@ -42,7 +44,9 @@ export function useLLMGeneration() {
         case 'articleType':
           if (node.data.systemPrompt) { systemPrompt = node.data.systemPrompt; parts.push(`## 文章类型\n${node.data.name}`) }
           break
-        case 'skill':
+        case 'skill': {
+          const category = node.data.category || skillStore.skills.find(s => s.id === node.data.skillId)?.category
+          if (category === 'title') break // 标题类技能不进正文生成
           if (node.data.promptFragment) {
             let f = node.data.promptFragment
             if (node.data.variables) {
@@ -51,6 +55,7 @@ export function useLLMGeneration() {
             parts.push(`## 写作风格\n${f}`)
           }
           break
+        }
         case 'character':
           if (node.data.description) parts.push(`## 人物：${node.data.name || '未命名'}\n${node.data.description}`)
           break
@@ -67,13 +72,18 @@ export function useLLMGeneration() {
             parts.push(`## ${node.data.title} 概要\n${snippet}`)
           }
           break
-        case 'reference':
-          if (node.data.content) {
-            const refTitle = node.data.title || '参考资料'
-            const refUrl = node.data.sourceUrl ? `\n来源：${node.data.sourceUrl}` : ''
-            parts.push(`## 参考资料：${refTitle}\n${node.data.content}${refUrl}`)
-          }
+        case 'reference': {
+          const refContent = (node.data.content || '').trim()
+          const refUrl = (node.data.sourceUrl || '').trim()
+          if (!refContent && !refUrl) break
+          const refTitle = node.data.title || '参考资料'
+          const body = refContent
+            ? (refContent.length > 4000 ? refContent.substring(0, 4000) + '…（正文过长已截断）' : refContent)
+            : '（仅提供了链接，未读取到正文内容）'
+          const urlLine = refUrl ? `\n来源：${refUrl}` : ''
+          parts.push(`## 参考资料：${refTitle}\n${body}${urlLine}`)
           break
+        }
       }
     }
 
@@ -82,7 +92,7 @@ export function useLLMGeneration() {
 
     parts.push(`## 本章：${chapterTitle}`)
     if (chapterOutline) parts.push(`用户对本章的设想：${chapterOutline}`)
-    parts.push(`请创作本章的完整内容。写作要求：\n1. 本章就是${chapterTitle}，正文中如需提及章节号必须使用「${chapterTitle}」，不要出现其他章节编号\n2. 每段不超过3行，关键观点用 **加粗** 标注\n3. 自然融入 2-3 句可独立传播的金句\n4. 直接输出正文，不要加任何前置说明`)
+    parts.push(`请创作本章的完整内容。写作要求：\n1. 本章就是${chapterTitle}，正文中如需提及章节号必须使用「${chapterTitle}」，不要出现其他章节编号\n2. 每段不超过3行，用具体细节、真实经历、数据说话，不要堆形容词和空泛的排比；关键处可加粗强调，但不要句句加粗\n3. 避免「AI 味」：不刻意造金句、不滥用对仗排比、不写「在这个…的时代」这类套话、不虚假升华；语气自然平实，像真人在讲，观点点到为止\n4. 直接输出正文，不要加任何前置说明`)
 
     return { systemPrompt, userPrompt: parts.join('\n\n') }
   }

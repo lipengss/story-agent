@@ -120,7 +120,7 @@ async function aiGenerate() {
 ## 风格模板结构
 一个写作风格包含：
 - name：简短名称（如"海明威风格""知乎爆款体""玄幻世界观"）
-- category：分类，从以下选一：style(风格) / structure(结构) / character(角色) / world(世界)
+- category：分类，从以下选一：style(风格) / structure(结构) / character(角色) / world(世界) / title(标题)
 - description：一句话描述此风格的用途
 - promptFragment：核心提示词片段。用 {{变量名}} 格式标记占位符。这是发送给 AI 的实际指令，需要包含：
   1. 【角色设定】AI 扮演什么角色、有什么能力

@@ -4,7 +4,7 @@ import { Handle, Position } from '@vue-flow/core'
 import { useProjectStore } from '@/stores/project'
 import { useSkillStore } from '@/stores/skills'
 
-const props = defineProps<{ id: string; data: { skillId: string; name: string; promptFragment: string; variables: any[] } }>()
+const props = defineProps<{ id: string; data: { skillId: string; name: string; category?: string; promptFragment: string; variables: any[] } }>()
 const projectStore = useProjectStore()
 const skillStore = useSkillStore()
 
@@ -18,6 +18,7 @@ function onSkillSelect(skillId: string) {
     projectStore.updateNode(props.id, {
       skillId: skill.id,
       name: skill.name,
+      category: skill.category,
       promptFragment: skill.promptFragment,
       variables: skill.variables ? [...skill.variables] : [],
     })
